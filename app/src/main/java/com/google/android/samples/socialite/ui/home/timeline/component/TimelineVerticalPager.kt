@@ -19,13 +19,19 @@ package com.google.android.samples.socialite.ui.home.timeline.component
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
@@ -39,6 +45,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.core.net.toUri
+import androidx.media3.cast.MediaRouteButton
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.PlayerSurface
@@ -55,8 +62,10 @@ internal fun TimelineVerticalPager(
     mediaItems: List<TimelineMediaItem>,
     player: Player?,
     videoRatio: Float?,
+    isRemote: Boolean,
     modifier: Modifier = Modifier,
     onChangePlayerItem: (uri: Uri?, page: Int) -> Unit = { uri: Uri?, i: Int -> },
+    onInspectClicked: (uri: String) -> Unit = {},
 ) {
     val pagerState = rememberPagerState(pageCount = { mediaItems.count() })
     LaunchedEffect(pagerState) {
@@ -74,9 +83,11 @@ internal fun TimelineVerticalPager(
         TimelineVerticalPager(
             mediaItems = mediaItems,
             player = player,
+            isRemote = isRemote,
             pagerState = pagerState,
             videoRatio = videoRatio,
             modifier = modifier,
+            onInspectClicked = onInspectClicked,
         )
     }
 }
@@ -85,9 +96,11 @@ internal fun TimelineVerticalPager(
 private fun TimelineVerticalPager(
     mediaItems: List<TimelineMediaItem>,
     player: Player,
+    isRemote: Boolean,
     pagerState: PagerState,
     videoRatio: Float?,
     modifier: Modifier = Modifier,
+    onInspectClicked: (uri: String) -> Unit = {},
 ) {
     VerticalPager(
         state = pagerState,
@@ -98,6 +111,7 @@ private fun TimelineVerticalPager(
         TimelinePage(
             mediaItem = mediaItem,
             player = player,
+            isRemote = isRemote,
             page = page,
             pagerState = pagerState,
             videoRatio = videoRatio,
@@ -105,8 +119,7 @@ private fun TimelineVerticalPager(
                 .combinedClickable(
                     enabled = true,
                     onClick = {},
-                    onLongClick = {
-                    },
+                    onLongClick = {},
                 )
                 .fillMaxSize()
                 .padding(8.dp)
@@ -114,10 +127,8 @@ private fun TimelineVerticalPager(
                     // Calculate the absolute offset for the current page from the
                     // scroll position. We use the absolute value which allows us to mirror
                     // any effects for both directions
-                    val pageOffset = (
-                        (pagerState.currentPage - page) + pagerState
-                            .currentPageOffsetFraction
-                        ).absoluteValue
+                    val pageOffset =
+                        ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).absoluteValue
                     // We animate the alpha, between 0% and 100%
                     alpha = lerp(
                         start = 0f,
@@ -125,6 +136,7 @@ private fun TimelineVerticalPager(
                         fraction = 1f - pageOffset.coerceIn(0f, 1f),
                     )
                 },
+            onInspectClicked = onInspectClicked,
         )
     }
 }
@@ -133,10 +145,12 @@ private fun TimelineVerticalPager(
 private fun TimelinePage(
     mediaItem: TimelineMediaItem,
     player: Player,
+    isRemote: Boolean,
     page: Int,
     pagerState: PagerState,
     videoRatio: Float?,
     modifier: Modifier = Modifier,
+    onInspectClicked: (uri: String) -> Unit = {},
 ) {
     TimelineCard(
         modifier = modifier,
@@ -150,9 +164,11 @@ private fun TimelinePage(
                     .draggableMediaItem(mediaItem),
                 media = mediaItem,
                 player = player,
+                isRemote = isRemote,
                 page,
                 pagerState,
                 videoRatio,
+                onInspectClicked = onInspectClicked,
             )
         }
         MetadataOverlay(
@@ -169,9 +185,11 @@ private fun MediaItem(
     modifier: Modifier = Modifier,
     media: TimelineMediaItem,
     player: Player,
+    isRemote: Boolean,
     page: Int,
     state: PagerState,
     videoRatio: Float?,
+    onInspectClicked: (uri: String) -> Unit = {},
 ) {
     when (media.type) {
         TimelineMediaType.VIDEO -> {
@@ -183,12 +201,20 @@ private fun MediaItem(
                     }
 
                     else -> {
-                        PlayerSurface(
-                            player = player,
-                            modifier = modifier.resizeWithContentScale(
-                                ContentScale.Fit,
-                                null,
-                            ),
+                        // Use the "key" composable to force the recreation of the PlayerSurface
+                        // when the playback switch between local and remote
+                        androidx.compose.runtime.key(isRemote) {
+                            PlayerSurface(
+                                player = player,
+                                modifier = modifier.resizeWithContentScale(
+                                    ContentScale.Fit,
+                                    null,
+                                ),
+                            )
+                        }
+                        PlayerControls(
+                            uri = media.uri,
+                            onInspectClicked = onInspectClicked,
                         )
                     }
                 }
@@ -197,14 +223,40 @@ private fun MediaItem(
 
         TimelineMediaType.PHOTO -> {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(media.uri)
-                    .build(),
+                model = ImageRequest.Builder(LocalContext.current).data(media.uri).build(),
                 contentDescription = null,
-                modifier = modifier
-                    .fillMaxSize(),
+                modifier = modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit,
             )
         }
+    }
+}
+
+private val MediaRouteButtonIntrinsicPadding = 15.dp
+
+@Composable
+private fun PlayerControls(
+    uri: String,
+    onInspectClicked: (uri: String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(-MediaRouteButtonIntrinsicPadding),
+    ) {
+        // Display an info button to inspect the video's metadata.
+        IconButton(
+            onClick = {
+                onInspectClicked(uri)
+            },
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Info,
+                contentDescription = "Inspect video metadata",
+            )
+        }
+        // Display a Cast button
+        MediaRouteButton()
     }
 }

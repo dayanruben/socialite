@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.google.android.samples.socialite.ui
 
 import android.app.Activity
@@ -24,6 +26,7 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
@@ -56,6 +59,7 @@ import com.google.android.samples.socialite.ui.home.chatlist.ChatList
 import com.google.android.samples.socialite.ui.home.chatlist.ChatOpenRequest
 import com.google.android.samples.socialite.ui.home.settings.Settings
 import com.google.android.samples.socialite.ui.home.timeline.Timeline
+import com.google.android.samples.socialite.ui.metadata.screens.MetadataInspector
 import com.google.android.samples.socialite.ui.navigation.Pane
 import com.google.android.samples.socialite.ui.navigation.SocialiteNavSuite
 import com.google.android.samples.socialite.ui.navigation.TopLevelDestination
@@ -75,7 +79,7 @@ fun Main(
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun MainNavigation(
     modifier: Modifier,
@@ -89,9 +93,7 @@ fun MainNavigation(
     val localNavSharedTransitionScope: ProvidableCompositionLocal<SharedTransitionScope> =
         compositionLocalOf {
             throw IllegalStateException(
-                "Unexpected access to LocalNavSharedTransitionScope. You must provide a " +
-                    "SharedTransitionScope from a call to SharedTransitionLayout() or " +
-                    "SharedTransitionScope()",
+                "Unexpected access to LocalNavSharedTransitionScope. You must provide a " + "SharedTransitionScope from a call to SharedTransitionLayout() or " + "SharedTransitionScope()",
             )
         }
 
@@ -131,7 +133,12 @@ fun MainNavigation(
                     entryProvider = { backStackKey ->
                         when (backStackKey) {
                             is Pane.Timeline -> NavEntry(backStackKey) {
-                                Timeline(Modifier.fillMaxSize())
+                                Timeline(
+                                    Modifier.fillMaxSize(),
+                                    onInspectClicked = { uri ->
+                                        backStack.add(Pane.MetadataInspector(uri))
+                                    },
+                                )
                             }
 
                             is Pane.Settings -> NavEntry(backStackKey) {
@@ -176,6 +183,9 @@ fun MainNavigation(
                                     prefilledText = backStackKey.text,
                                     prefilledImageUri = backStackKey.imageUri,
                                     modifier = Modifier.fillMaxSize(),
+                                    onInspectClicked = { uri ->
+                                        backStack.add(Pane.MetadataInspector(uri))
+                                    },
                                 )
                             }
 
@@ -222,12 +232,7 @@ fun MainNavigation(
                                     onCloseButtonClicked = { backStack.removeLastOrNull() },
                                     onFinishEditing = {
                                         var pane = backStack.lastOrNull()
-                                        while (pane != null &&
-                                            (
-                                                pane !is Pane.ChatThread ||
-                                                    pane.chatId != backStackKey.chatId
-                                                )
-                                        ) {
+                                        while (pane != null && (pane !is Pane.ChatThread || pane.chatId != backStackKey.chatId)) {
                                             backStack.removeLastOrNull()
                                             pane = backStack.lastOrNull()
                                         }
@@ -240,6 +245,10 @@ fun MainNavigation(
                                     uri = backStackKey.uri,
                                     onCloseButtonClicked = { backStack.removeLastOrNull() },
                                 )
+                            }
+
+                            is Pane.MetadataInspector -> NavEntry(backStackKey) {
+                                MetadataInspector(backStackKey.uri)
                             }
 
                             else -> NavEntry(backStackKey) {
@@ -261,6 +270,7 @@ fun MainNavigation(
                     is Pane.Camera -> {
                         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
                     }
+
                     else -> {
                         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                     }
@@ -277,11 +287,10 @@ fun <T : Any> rememberSavableMutableStateListOf(vararg elements: T): SnapshotSta
     }
 }
 
-private fun <T : Any> snapshotStateListSaver() =
-    listSaver<SnapshotStateList<T>, T>(
-        save = { stateList -> stateList.toList() },
-        restore = { it.toMutableStateList() },
-    )
+private fun <T : Any> snapshotStateListSaver() = listSaver<SnapshotStateList<T>, T>(
+    save = { stateList -> stateList.toList() },
+    restore = { it.toMutableStateList() },
+)
 
 private fun handleOChatOpenRequest(
     request: ChatOpenRequest,

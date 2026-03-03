@@ -166,6 +166,8 @@ dependencies {
     implementation(libs.media3.transformer)
     implementation(libs.media3.ui)
     implementation(libs.media3.ui.compose)
+    implementation(libs.media3.cast)
+    implementation(libs.nanohttpd)
 
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)

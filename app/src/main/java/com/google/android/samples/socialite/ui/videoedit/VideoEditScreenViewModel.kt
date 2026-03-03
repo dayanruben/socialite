@@ -31,6 +31,8 @@ import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.C.TRACK_TYPE_AUDIO
+import androidx.media3.common.C.TRACK_TYPE_VIDEO
 import androidx.media3.common.Effect
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -65,6 +67,7 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "VideoEditViewModel"
 
+@UnstableApi
 @HiltViewModel
 class VideoEditScreenViewModel @Inject constructor(
     @ApplicationContext private val application: Context,
@@ -118,6 +121,8 @@ class VideoEditScreenViewModel @Inject constructor(
         textOverlayText: String,
         textOverlayRedSelected: Boolean,
         textOverlayLargeSelected: Boolean,
+        videoTrimStart: Long,
+        videoTrimEnd: Long,
     ) {
         val transformer = Transformer.Builder(context)
             .setVideoMimeType(MimeTypes.VIDEO_H264)
@@ -134,6 +139,8 @@ class VideoEditScreenViewModel @Inject constructor(
             textOverlayText = textOverlayText,
             textOverlayRedSelected = textOverlayRedSelected,
             textOverlayLargeSelected = textOverlayLargeSelected,
+            videoTrimStart = videoTrimStart,
+            videoTrimEnd = videoTrimEnd,
         )
 
         val editedVideoFileName = "Socialite-edited-recording-" +
@@ -163,8 +170,18 @@ class VideoEditScreenViewModel @Inject constructor(
         textOverlayText: String,
         textOverlayRedSelected: Boolean,
         textOverlayLargeSelected: Boolean,
+        videoTrimStart: Long,
+        videoTrimEnd: Long,
     ): Composition {
-        val mediaItem = MediaItem.fromUri(videoUri)
+        val mediaItem = MediaItem.Builder()
+            .setUri(videoUri)
+            .setClippingConfiguration(
+                MediaItem.ClippingConfiguration.Builder()
+                    .setStartPositionMs(videoTrimStart)
+                    .setEndPositionMs(videoTrimEnd)
+                    .build(),
+            )
+            .build()
         // Try to retrieve the video duration
         val retriever = MediaMetadataRetriever()
         val durationUs = try {
@@ -193,7 +210,9 @@ class VideoEditScreenViewModel @Inject constructor(
         val editedMediaItem =
             EditedMediaItem.Builder(mediaItem)
                 .setRemoveAudio(removeAudio).setDurationUs(durationUs).build()
-        val videoImageSequence = EditedMediaItemSequence(editedMediaItem)
+        val videoImageSequence =
+            EditedMediaItemSequence.Builder(mutableSetOf(TRACK_TYPE_VIDEO, TRACK_TYPE_AUDIO))
+                .addItem(editedMediaItem).build()
 
         val compositionBuilder = Composition.Builder(videoImageSequence)
         // Tone-map to SDR if style transfer is selected since it can only be applied for SDR videos
@@ -201,6 +220,7 @@ class VideoEditScreenViewModel @Inject constructor(
             compositionBuilder.setHdrMode(HDR_MODE_TONE_MAP_HDR_TO_SDR_USING_OPEN_GL)
         }
         compositionBuilder.setEffects(Effects(listOf(), videoEffects))
+
         return compositionBuilder.build()
     }
 

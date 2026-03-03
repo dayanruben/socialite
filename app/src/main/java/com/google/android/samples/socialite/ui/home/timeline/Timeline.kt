@@ -43,11 +43,13 @@ fun Timeline(
     modifier: Modifier = Modifier,
     viewModel: TimelineViewModel = hiltViewModel(),
     format: TimelineFormat = rememberTimelineFormat(),
+    onInspectClicked: (uri: String) -> Unit = {},
 ) {
     val mediaItems by viewModel.media.collectAsStateWithLifecycle(emptyList())
 
     val player = viewModel.player
     val videoRatio = viewModel.videoRatio
+    val isRemote = viewModel.isRemote
 
     when {
         mediaItems.isEmpty() -> {
@@ -55,15 +57,18 @@ fun Timeline(
                 EmptyTimeline(contentPadding, modifier)
             }
         }
+
         else -> {
             Timeline(
                 player = player,
                 mediaItems = mediaItems,
                 videoRatio = videoRatio,
+                isRemote = isRemote,
                 onChangePlayerItem = viewModel::changePlayerItem,
                 onInitializePlayer = viewModel::initializePlayer,
                 onReleasePlayer = viewModel::releasePlayer,
                 format = format,
+                onInspectClicked = onInspectClicked,
             )
         }
     }
@@ -74,11 +79,13 @@ fun Timeline(
     mediaItems: List<TimelineMediaItem>,
     player: Player?,
     videoRatio: Float?,
+    isRemote: Boolean,
     modifier: Modifier = Modifier,
     format: TimelineFormat = rememberTimelineFormat(),
     onChangePlayerItem: (uri: Uri?, page: Int) -> Unit = { uri: Uri?, i: Int -> },
     onInitializePlayer: () -> Unit = {},
     onReleasePlayer: () -> Unit = {},
+    onInspectClicked: (uri: String) -> Unit = {},
 ) {
     val currentOnInitializePlayer by rememberUpdatedState(onInitializePlayer)
     val currentOnReleasePlayer by rememberUpdatedState(onReleasePlayer)
@@ -105,8 +112,12 @@ fun Timeline(
                     mediaItems = mediaItems,
                     player = player,
                     videoRatio = videoRatio,
+                    isRemote = isRemote,
                     onChangePlayerItem = onChangePlayerItem,
-                    modifier = Modifier.fillMaxSize().padding(contentPadding),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding),
+                    onInspectClicked = onInspectClicked,
                 )
             }
         }
