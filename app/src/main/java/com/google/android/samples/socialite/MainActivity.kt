@@ -72,8 +72,8 @@ class MainActivity : ComponentActivity() {
                     return@OnCompleteListener
                 } // Get new FCM registration token
                 val token = task.result
-                // Log token
-                Log.d("FCM", "FCM message token $token")
+                // Log token, for testing purposes only.
+                // Log.d("FCM", "FCM message token $token")
             },
         )
     }
