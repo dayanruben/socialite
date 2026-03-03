@@ -30,8 +30,8 @@ core = "1.16.0"
 core-performance = "1.0.0"
 core-splashscreen = "1.0.1"
 espresso = "3.6.1"
-firebaseBoM = "33.14.0"
-googleGmsGoogleServices = "4.4.2"
+firebaseBoM = "34.10.0"
+googleGmsGoogleServices = "4.4.4"
 download = "5.6.0"
 graphics = "1.0.1"
 hilt = "2.56.1"
@@ -143,6 +143,8 @@ generativeai = { group = "com.google.ai.client.generativeai", name = "generative
 datastore = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBoM" }
 firebase-ai = { group = "com.google.firebase", name = "firebase-ai" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
+firebase-messaging = {group = "com.google.firebase", name = "firebase-messaging" }
 vision-common = { group = "com.google.mlkit", name = "vision-common", version.ref = "visionCommon" }
 
 

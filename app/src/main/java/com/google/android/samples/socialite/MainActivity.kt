@@ -20,6 +20,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import android.view.KeyboardShortcutGroup
 import android.view.KeyboardShortcutInfo
@@ -30,8 +31,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.samples.socialite.ui.Main
 import com.google.android.samples.socialite.widget.SociaLiteAppWidget
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -40,6 +43,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()
+        initializeFcm()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
@@ -53,6 +57,25 @@ class MainActivity : ComponentActivity() {
                 appArgs = extractAppArgs(intent),
             )
         }
+    }
+
+    /**
+     * Sets up Firebase Cloud Messaging (FCM) for push notifications.
+     * FCM enables cross device message delivery and versatile message delivery.
+     * See https://firebase.google.com/docs/cloud-messaging/android/get-started.
+     */
+    private fun initializeFcm() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(
+            OnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    Log.w("FCM", "Fetching FCM registration token failed", task.exception)
+                    return@OnCompleteListener
+                }  // Get new FCM registration token
+                val token = task.result
+                // Log token
+                Log.d("FCM", "FCM message token $token")
+            },
+        )
     }
 
     private fun extractAppArgs(intent: Intent?): AppArgs? {
