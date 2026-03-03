@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
                 if (!task.isSuccessful) {
                     Log.w("FCM", "Fetching FCM registration token failed", task.exception)
                     return@OnCompleteListener
-                }  // Get new FCM registration token
+                } // Get new FCM registration token
                 val token = task.result
                 // Log token
                 Log.d("FCM", "FCM message token $token")
