@@ -1,0 +1,5 @@
+Socialite includes the following third-party software/code:
+
+NanoHTTPD
+Copyright (c) 2012-2013 by Paul S. Hawke, 2001, 2005-2013 by Jarno Elonen, 2010 by Konstantinos Togias
+License: Modified BSD License (see licenses/NANOHTTPD_LICENSE)

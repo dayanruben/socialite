@@ -107,3 +107,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
+
+---
+**Third-Party Licenses**
+
+SociaLite includes the [NanoHTTPD](https://github.com/NanoHttpd/nanohttpd) library, which is licensed under a Modified BSD License. See the [NOTICE](NOTICE) file for more details.
