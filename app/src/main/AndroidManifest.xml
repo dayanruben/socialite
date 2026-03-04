@@ -182,7 +182,8 @@
 
         </provider>
 
-        <receiver android:name="com.google.android.samples.socialite.ReplyReceiver" />
+        <receiver android:name=".ReplyReceiver" />
+        <receiver android:name=".fcm.MessagingBroadcastReceiver" />
 
         <!-- Trigger Google Play services to install the backported photo picker module.
          Refer https://developer.android.com/training/data-storage/shared/photopicker#device-availability -->

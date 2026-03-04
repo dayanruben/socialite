@@ -16,9 +16,17 @@
 
 package com.google.android.samples.socialite.fcm
 
+import android.app.NotificationManager
+import android.util.Log
+import androidx.core.content.getSystemService
+import com.google.android.samples.socialite.repository.NOTIFICATION_ACTION
+import com.google.android.samples.socialite.repository.NOTIFICATION_ID
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
+/**
+ * Service for handling Firebase Cloud Messaging.
+ */
 class MessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
@@ -30,15 +38,43 @@ class MessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
+        val notificationManager: NotificationManager =
+            this.getSystemService() ?: throw IllegalStateException()
+
         // Handle data payload
         if (remoteMessage.data.isNotEmpty()) {
-            // Log.d("FCM", "Message data payload: ${remoteMessage.data}")
-        }
+            // If payload is relevant to dismissal, cancel the notification.
+            // For the device that triggered this dismissal, it is noop but
+            // for other devices that belongs to the user, the notification will be
+            // removed.
+            // Note that the below is just an example of a payload that can be
+            // relevant to dismissal.
+            if (remoteMessage.data[NOTIFICATION_ACTION] == "DISMISSAL" &&
+                remoteMessage.data[NOTIFICATION_ID] != null
+            ) {
+                Log.d(
+                    MessagingService::class::simpleName.toString(),
+                    "Message data payload: ${remoteMessage.data}",
+                )
+                remoteMessage.data[NOTIFICATION_ID]?.toIntOrNull()
+                    ?.let { notificationManager.cancel(it) }
+            }
 
-        // Handle notification payload
-        remoteMessage.notification?.let {
-            // Log.d("FCM", "Message Notification Body: ${it.body}")
-            // Trigger local notification here
+            // Handle notification payload
+            remoteMessage.notification?.let {
+                // Log.d("FCM", "Message Notification Body: ${it.body}")
+                // Trigger local notification here
+                // This notif should have unique ID as well.
+            }
         }
+    }
+
+    /**
+     * It is good practice to handle deleted messages in FCM
+     * See https://firebase.google.com/docs/cloud-messaging/android/receive-messages#override-on-deleted-messages
+     */
+    override fun onDeletedMessages() {
+        super.onDeletedMessages()
+        // Up to the developer on how to handle this and surface this behavior to the end user.
     }
 }

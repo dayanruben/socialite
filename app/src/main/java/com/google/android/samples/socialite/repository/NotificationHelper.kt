@@ -41,6 +41,7 @@ import com.google.android.samples.socialite.BubbleActivity
 import com.google.android.samples.socialite.MainActivity
 import com.google.android.samples.socialite.R
 import com.google.android.samples.socialite.ReplyReceiver
+import com.google.android.samples.socialite.fcm.MessagingBroadcastReceiver
 import com.google.android.samples.socialite.model.Contact
 import com.google.android.samples.socialite.model.Message
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -54,6 +55,10 @@ enum class PushReason {
     IncomingMessage,
     OutgoingMessage,
 }
+
+const val NOTIFICATION_ACTION = "NOTIFICATION_ACTION"
+const val NOTIFICATION_DISMISSED = "NOTIFICATION_DISMISSED"
+const val NOTIFICATION_ID = "NOTIFICATION_ID"
 
 /**
  * Handles all operations related to [Notification].
@@ -197,6 +202,9 @@ class NotificationHelper @Inject constructor(@ApplicationContext context: Contex
             }
         }
 
+        val lastMessage = messages.last()
+        val notificationId = contact.id.toInt() + lastMessage.id.toInt()
+
         val builder = NotificationCompat.Builder(appContext, CHANNEL_NEW_MESSAGES)
             // A notification can be shown as a bubble by calling setBubbleMetadata()
             .setBubbleMetadata(
@@ -268,12 +276,25 @@ class NotificationHelper @Inject constructor(@ApplicationContext context: Contex
             // Let's add some more content to the notification in case it falls back to a normal
             // notification.
             .setStyle(messagingStyle)
-            .setWhen(messages.last().timestamp)
+            .setWhen(lastMessage.timestamp)
+            .setDeleteIntent(createNotificationDismissIntent(notificationId))
         // Don't sound/vibrate if an update to an existing notification.
         if (update) {
             builder.setOnlyAlertOnce(true)
         }
-        notificationManager.notify(contact.id.toInt(), builder.build())
+        notificationManager.notify(notificationId, builder.build())
+    }
+
+    private fun createNotificationDismissIntent(notificationId: Int): PendingIntent {
+        val deleteIntent = Intent(appContext, MessagingBroadcastReceiver::class.java)
+        deleteIntent.action = NOTIFICATION_DISMISSED
+        deleteIntent.putExtra(NOTIFICATION_ID, notificationId)
+        return PendingIntent.getBroadcast(
+            appContext,
+            notificationId,
+            deleteIntent,
+            flagUpdateCurrent(mutable = false),
+        )
     }
 
     fun dismissNotification(chatId: Long) {
