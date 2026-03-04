@@ -56,7 +56,8 @@ class MessagingService : FirebaseMessagingService() {
                     MessagingService::class::simpleName.toString(),
                     "Message data payload: ${remoteMessage.data}",
                 )
-                notificationManager.cancel(remoteMessage.data[NOTIFICATION_ID]!!.toInt())
+                remoteMessage.data[NOTIFICATION_ID]?.toIntOrNull()
+                    ?.let { notificationManager.cancel(it) }
             }
 
             // Handle notification payload
