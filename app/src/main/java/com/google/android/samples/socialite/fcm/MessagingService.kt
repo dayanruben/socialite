@@ -16,7 +16,6 @@
 
 package com.google.android.samples.socialite.fcm
 
-import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -26,7 +25,6 @@ class MessagingService : FirebaseMessagingService() {
         // Token used for device targeting.
         // See https://firebase.google.com/docs/cloud-messaging/android/get-started#access-fcm-registration-token
         super.onNewToken(token)
-        Log.d("FCM", "Refreshed token: $token")
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -34,12 +32,12 @@ class MessagingService : FirebaseMessagingService() {
 
         // Handle data payload
         if (remoteMessage.data.isNotEmpty()) {
-            Log.d("FCM", "Message data payload: ${remoteMessage.data}")
+            // Log.d("FCM", "Message data payload: ${remoteMessage.data}")
         }
 
         // Handle notification payload
         remoteMessage.notification?.let {
-            Log.d("FCM", "Message Notification Body: ${it.body}")
+            // Log.d("FCM", "Message Notification Body: ${it.body}")
             // Trigger local notification here
         }
     }
