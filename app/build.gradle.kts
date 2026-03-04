@@ -186,6 +186,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
     implementation(libs.datastore)
+    implementation(libs.firebase.messaging)
 
     implementation(libs.adaptive.navigation3)
     implementation(libs.navigation3.runtime)
