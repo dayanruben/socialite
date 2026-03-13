@@ -161,12 +161,14 @@ dependencies {
     implementation(libs.camera.view)
 
     implementation(libs.media3.common)
+    implementation(libs.media3.cast)
     implementation(libs.media3.effect)
     implementation(libs.media3.exoplayer)
+    implementation(libs.media3.inspector)
     implementation(libs.media3.transformer)
     implementation(libs.media3.ui)
     implementation(libs.media3.ui.compose)
-    implementation(libs.media3.cast)
+    // For local server hosting required by Media3 Cast
     implementation(libs.nanohttpd)
 
     implementation(libs.hilt.android)
